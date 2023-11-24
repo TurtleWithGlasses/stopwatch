@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from settings import *
+from time import time
 
 class App(ctk.CTk):
     def __init__(self):
@@ -18,6 +19,7 @@ class App(ctk.CTk):
         # fonts
         self.button_font = ctk.CTkFont(family=FONT,size=BUTTON_FONT_SIZE)
 
+        self.timer = Timer()
 
 
         # widgets
@@ -32,19 +34,19 @@ class App(ctk.CTk):
         self.mainloop()
 
     def start(self):
-        print("start")
+        self.timer.start()
     
     def pause(self):
-        print("pause")
+        self.timer.pause()
     
     def resume(self):
-        print("resume")
+        self.timer.resume()
     
     def reset(self):
-        print("reset")
+        self.timer.reset()
     
     def create_lap(self):
-        print("lap")
+        print(self.timer.get_time())
 
 
 class ControlButtons(ctk.CTkFrame):
@@ -123,11 +125,40 @@ class ControlButtons(ctk.CTkFrame):
             self.start_button.configure(text="Start",fg_color=GREEN,hover_color=GREEN_HIGHLIGHT,text_color=GREEN_TEXT)
             self.lap_button.configure(state="disabled",text="Lap",fg_color=GREY)
         elif self.state == "on":
-            self.lap_button.configure(state="normal",fg_color=ORANGE_DARK,hover_color=ORANGE_HIGHLIGHT,text_color=ORANGE_DARK_TEXT)
+            self.lap_button.configure(text="Lap",state="normal",fg_color=ORANGE_DARK,hover_color=ORANGE_HIGHLIGHT,text_color=ORANGE_DARK_TEXT)
             self.start_button.configure(text="Stop",fg_color=RED,hover_color=RED_HIGHLIGHT,text_color=RED_TEXT)
         elif self.state == "pause":
             self.start_button.configure(text="Start",fg_color=GREEN,hover_color=GREEN_HIGHLIGHT,text_color=GREEN_TEXT)
             self.lap_button.configure(text="Reset")
+
+class Timer:
+    def __init__(self):
+        self.start_time = None
+        self.pause_time = None
+        self.paused = False
+
+    def start(self):
+        self.start_time = time()
+        self.reset()
+    
+    def pause(self):
+        self.pause_time = time()
+        self.paused = True
+    
+    def resume(self):
+        elapsed_time = time() - self.pause_time
+        self.start_time += elapsed_time
+        self.paused = False
+    
+    def reset(self):
+        self.pause_time = 0
+        self.paused = False
+    
+    def get_time(self):
+        if self.paused:
+            return int(round(self.pause_time - self.start_time,2)*1000)
+        else:
+            return int(round(time() - self.start_time,2)*1000)
 
 if __name__ == "__main__":
     App()

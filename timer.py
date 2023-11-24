@@ -2,6 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 from settings import *
 from time import time
+from math import sin, cos, radians
 
 class App(ctk.CTk):
     def __init__(self):
@@ -60,9 +61,16 @@ class Clock(tk.Canvas):
     def setup(self,event):
         self.center = (event.width / 2, event.height / 2)
         self.size = (event.width, event.height)
+
+        self.outer_radius = (event.width / 2) * 0.95
+        self.inner_radius = (event.width / 2) * 0.85
+        self.middle_radius = (event.width / 2) * 0.9
+
+
         self.draw()
 
     def draw(self, milliseconds=0):
+        self.draw_clock()
         self.draw_center()
     
     def draw_center(self):
@@ -73,6 +81,26 @@ class Clock(tk.Canvas):
                          fill=BLACK,
                          outline=ORANGE,
                          width=LINE_WIDTH)
+
+    def draw_clock(self):
+        for angle in range(360):            
+            sin_a = sin(radians(angle-90))
+            cos_a = cos(radians(angle-90))
+
+            x = self.center[0] + (cos_a * self.outer_radius)
+            y = self.center[1] + (sin_a * self.outer_radius)
+
+            if angle % 30 == 0:
+                x_inner = self.center[0] + (cos_a * self.inner_radius)
+                y_inner = self.center[1] + (sin_a * self.inner_radius)
+
+                self.create_line((x_inner,y_inner),(x,y),fill=WHITE,width=LINE_WIDTH)
+
+            elif angle %6 == 0:
+                x_middle = self.center[0] + (cos_a * self.middle_radius)
+                y_middle = self.center[1] + (sin_a * self.middle_radius)
+
+                self.create_line((x_middle,y_middle),(x,y),fill=GREY,width=LINE_WIDTH)
 
 
 class ControlButtons(ctk.CTkFrame):

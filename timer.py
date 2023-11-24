@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import tkinter as tk
 from settings import *
 from time import time
 
@@ -23,6 +24,7 @@ class App(ctk.CTk):
 
 
         # widgets
+        self.clock = Clock(self)
         self.control_buttons = ControlButtons(parent = self,
                                               font = self.button_font,
                                               start = self.start,
@@ -47,6 +49,30 @@ class App(ctk.CTk):
     
     def create_lap(self):
         print(self.timer.get_time())
+
+
+class Clock(tk.Canvas):
+    def __init__(self,parent):
+        super().__init__(parent,background=BLACK,bd=0,highlightthickness=0,relief="ridge")
+        self.grid(column=0,row=0,sticky="nsew",padx=5,pady=5)
+        self.bind("<Configure>",self.setup)
+        
+    def setup(self,event):
+        self.center = (event.width / 2, event.height / 2)
+        self.size = (event.width, event.height)
+        self.draw()
+
+    def draw(self, milliseconds=0):
+        self.draw_center()
+    
+    def draw_center(self):
+        self.create_oval(self.center[0]-CENTER_SIZE,
+                         self.center[1]-CENTER_SIZE,
+                         self.center[0]+CENTER_SIZE,
+                         self.center[1]+CENTER_SIZE,
+                         fill=BLACK,
+                         outline=ORANGE,
+                         width=LINE_WIDTH)
 
 
 class ControlButtons(ctk.CTkFrame):

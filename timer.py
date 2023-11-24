@@ -89,8 +89,9 @@ class Clock(tk.Canvas):
         self.create_rectangle((0,0),self.size,fill=BLACK)
 
         self.draw_clock()
+        self.draw_text(milliseconds)
         self.draw_hand(angle)
-        self.draw_center()
+        self.draw_center()        
     
     def draw_center(self):
         self.create_oval(self.center[0]-CENTER_SIZE,
@@ -138,6 +139,9 @@ class Clock(tk.Canvas):
 
             self.create_line((x_start,y_start),(x_end,y_end),fill=ORANGE,width=LINE_WIDTH)
 
+    def draw_text(self,milliseconds):
+            output_text = convert_ms_to_time_string(milliseconds)
+            self.create_text((self.center[0],self.center[1] + 50), text=output_text,fill=WHITE,anchor="center",font=f"{FONT}{CLOCK_FONT_SIZE}")
 
 class ControlButtons(ctk.CTkFrame):
     def __init__(self,parent,font,start,pause,resume,reset,create_lap):
@@ -249,6 +253,29 @@ class Timer:
             return int(round(self.pause_time - self.start_time,2)*1000)
         else:
             return int(round(time() - self.start_time,2)*1000)
+
+def convert_ms_to_time_string(milliseconds):
+    if milliseconds > 0:
+        milliseconds_only = str(milliseconds)[-3:-1]
+        seconds_only = str(milliseconds)[:-3] if milliseconds >= 1000 else 0
+
+        minutes, seconds = divmod(int(seconds_only),60)
+        hours, minutes = divmod(minutes, 60)
+
+        second_string = str(seconds) if seconds >= 10 else f"0{seconds}"
+        minute_string = str(minutes) if minutes >= 10 else f"0{minutes}"
+        hour_string = str(hours) if hours >= 10 else f"0{hours}"
+
+        if hours > 0:
+            output_text = f"{hour_string}:{minute_string}:{second_string}.{milliseconds}"
+        elif minutes > 0:
+            output_text = f"{minute_string}:{second_string}.{milliseconds}"
+        else:
+            output_text = f"{second_string}.{milliseconds}"
+
+    else:
+        output_text = ""
+    return output_text
 
 if __name__ == "__main__":
     App()

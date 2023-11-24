@@ -23,6 +23,7 @@ class App(ctk.CTk):
 
         self.timer = Timer()
         self.active = False
+        self.lap_data = []
 
         # widgets
         self.clock = Clock(self)
@@ -33,6 +34,8 @@ class App(ctk.CTk):
                                               resume = self.resume,
                                               reset = self.reset,
                                               create_lap = self.create_lap)
+        self.lap_container = LapContainer(self)
+
 
         self.mainloop()
 
@@ -49,6 +52,8 @@ class App(ctk.CTk):
     def pause(self):
         self.timer.pause()
         self.active = False
+
+        self.create_lap("Pause")
     
     def resume(self):
         self.timer.resume()
@@ -58,9 +63,16 @@ class App(ctk.CTk):
     def reset(self):
         self.timer.reset()
         self.clock.draw(0)
+
+        # reset the laps
+        self.lap_data.clear()
+        self.lap_container.clear_container()
     
-    def create_lap(self):
-        print(self.timer.get_time())
+    def create_lap(self,lap_type):
+        lap_num = len([lap for lap in self.lap_data if lap[0] == "Lap"]) + 1
+        index = str(lap_num) if lap_type == "Lap" else ""
+        self.lap_data.append((lap_type,index,self.timer.get_time()))
+        self.lap_container.create(self.lap_data)
 
 class Clock(tk.Canvas):
     def __init__(self,parent):
@@ -208,7 +220,7 @@ class ControlButtons(ctk.CTkFrame):
 
     def lap_handler(self):
         if self.state == "on":
-            self.create_lap()
+            self.create_lap("Lap")
         else:
             self.reset()
             self.state = "off"
@@ -254,6 +266,61 @@ class Timer:
         else:
             return int(round(time() - self.start_time,2)*1000)
 
+class LapContainer(ctk.CTkFrame):
+    def __init__(self,parent):
+        super().__init__(parent,fg_color=BLACK)
+        self.grid(column=0,row=2,sticky="nsew")
+        self.canvas = None
+    
+    def create(self,data):
+        self.clear_container()
+
+        item_number = len(data)
+        list_height = item_number * LAP_ITEM_HEIGHT
+        scrollable = list_height > self.winfo_height()
+        scroll_height = list_height if scrollable else self.winfo_height()
+
+        # canvas setup
+        self.canvas = tk.Canvas(self,background=BLACK,
+                                scrollregion=(0,0,self.winfo_width(),
+                                              scroll_height),
+                                bd=0,
+                                highlightthickness=0,
+                                relief="ridge")
+        self.canvas.pack(fill="both",expand=True)
+
+        # create items
+        display_frame = ctk.CTkFrame(self,fg_color=BLACK)
+        for index, item in enumerate(data):
+            last_one = index == item_number -1
+            self.item(display_frame,item,last_one).pack(fill="both",expand=True)
+
+        if scrollable:
+            self.canvas.bind_all("<MouseWheel>",lambda event:self.canvas.yview_scroll(-int(event.delta / 60),"units"))
+
+        # place the displaty frame on canvas
+        self.canvas.create_window((0,0),
+                                  anchor="nw",
+                                  window=display_frame,
+                                  width=self.winfo_width(),
+                                  height=list_height)
+
+    def item(self,parent,info,last_one):
+        frame = ctk.CTkFrame(parent,fg_color=BLACK)
+        info_frame = ctk.CTkFrame(frame,fg_color=BLACK)
+        ctk.CTkLabel(info_frame,text=f"{info[0]} {info[1]}",text_color=WHITE).pack(side="left",padx=10)
+        ctk.CTkLabel(info_frame,text=f"{convert_ms_to_time_string(info[2])}",text_color=WHITE).pack(side="right",padx=10)
+        info_frame.pack(fill="both",expand=True)
+
+        if not last_one:
+            ctk.CTkFrame(frame,fg_color=GREY,height=1).pack(fill="x")
+
+        return frame
+
+    def clear_container(self):                
+        if self.canvas:
+            self.canvas.pack_forget()
+
 def convert_ms_to_time_string(milliseconds):
     if milliseconds > 0:
         milliseconds_only = str(milliseconds)[-3:-1]
@@ -269,7 +336,7 @@ def convert_ms_to_time_string(milliseconds):
         if hours > 0:
             output_text = f"{hour_string}:{minute_string}:{second_string}.{milliseconds}"
         elif minutes > 0:
-            output_text = f"{minute_string}:{second_string}.{milliseconds}"
+            output_text = f"{minute_string}:{second_string}.{milliseconds_only}"
         else:
             output_text = f"{second_string}.{milliseconds}"
 

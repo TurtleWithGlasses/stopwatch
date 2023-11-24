@@ -51,7 +51,6 @@ class App(ctk.CTk):
     def create_lap(self):
         print(self.timer.get_time())
 
-
 class Clock(tk.Canvas):
     def __init__(self,parent):
         super().__init__(parent,background=BLACK,bd=0,highlightthickness=0,relief="ridge")
@@ -65,12 +64,15 @@ class Clock(tk.Canvas):
         self.outer_radius = (event.width / 2) * 0.95
         self.inner_radius = (event.width / 2) * 0.85
         self.middle_radius = (event.width / 2) * 0.9
+        self.number_radius = (event.width / 2) * 0.7
+        self.start_radius = (event.width / 2) * 0.2
 
 
         self.draw()
 
     def draw(self, milliseconds=0):
         self.draw_clock()
+        self.draw_hand()
         self.draw_center()
     
     def draw_center(self):
@@ -91,16 +93,33 @@ class Clock(tk.Canvas):
             y = self.center[1] + (sin_a * self.outer_radius)
 
             if angle % 30 == 0:
+                # draw the line
                 x_inner = self.center[0] + (cos_a * self.inner_radius)
                 y_inner = self.center[1] + (sin_a * self.inner_radius)
-
                 self.create_line((x_inner,y_inner),(x,y),fill=WHITE,width=LINE_WIDTH)
+
+                # draw the numbers
+                x_number = self.center[0] + (cos_a * self.number_radius)
+                y_number = self.center[1] + (sin_a * self.number_radius)
+                self.create_text((x_number,y_number),text=f"{int(angle / 6)}",font=FONT,fill=WHITE)
 
             elif angle %6 == 0:
                 x_middle = self.center[0] + (cos_a * self.middle_radius)
                 y_middle = self.center[1] + (sin_a * self.middle_radius)
 
                 self.create_line((x_middle,y_middle),(x,y),fill=GREY,width=LINE_WIDTH)
+
+    def draw_hand(self, angle=0):
+            sin_a = sin(radians(angle-90))
+            cos_a = cos(radians(angle-90))    
+
+            x_end = self.center[0] + (cos_a * self.outer_radius)
+            y_end = self.center[1] + (sin_a * self.outer_radius)  
+
+            x_start = self.center[0] - (cos_a * self.start_radius)
+            y_start = self.center[1] - (sin_a * self.start_radius)
+
+            self.create_line((x_start,y_start),(x_end,y_end),fill=ORANGE,width=LINE_WIDTH)
 
 
 class ControlButtons(ctk.CTkFrame):

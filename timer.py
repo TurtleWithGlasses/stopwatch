@@ -22,7 +22,7 @@ class App(ctk.CTk):
         self.button_font = ctk.CTkFont(family=FONT,size=BUTTON_FONT_SIZE)
 
         self.timer = Timer()
-
+        self.active = False
 
         # widgets
         self.clock = Clock(self)
@@ -36,17 +36,28 @@ class App(ctk.CTk):
 
         self.mainloop()
 
+    def animate(self):
+        if self.active:
+            self.clock.draw(self.timer.get_time())
+            self.after(FRAMERATE, self.animate)
+
     def start(self):
         self.timer.start()
+        self.active = True
+        self.animate()
     
     def pause(self):
         self.timer.pause()
+        self.active = False
     
     def resume(self):
         self.timer.resume()
+        self.active = True
+        self.animate()
     
     def reset(self):
         self.timer.reset()
+        self.clock.draw(0)
     
     def create_lap(self):
         print(self.timer.get_time())
@@ -67,12 +78,18 @@ class Clock(tk.Canvas):
         self.number_radius = (event.width / 2) * 0.7
         self.start_radius = (event.width / 2) * 0.2
 
-
         self.draw()
 
     def draw(self, milliseconds=0):
+
+        seconds = milliseconds / 1000
+        angle = (seconds % 60) * 6
+
+        self.delete("all")
+        self.create_rectangle((0,0),self.size,fill=BLACK)
+
         self.draw_clock()
-        self.draw_hand()
+        self.draw_hand(angle)
         self.draw_center()
     
     def draw_center(self):

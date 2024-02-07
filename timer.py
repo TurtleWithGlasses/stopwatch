@@ -3,6 +3,7 @@ import tkinter as tk
 from settings import *
 from time import time
 from math import sin, cos, radians
+from openpyxl import Workbook
 
 class App(ctk.CTk):
     def __init__(self):
@@ -36,6 +37,8 @@ class App(ctk.CTk):
                                               create_lap = self.create_lap)
         self.lap_container = LapContainer(self)
 
+        # Bind "T" key to start the stopwatch
+        self.bind("T".lower(), self.start_handler)
 
         self.mainloop()
 
@@ -45,24 +48,29 @@ class App(ctk.CTk):
             self.after(FRAMERATE, self.animate)
 
     def start(self):
-        self.timer.start()
-        self.active = True
-        self.animate()
+        if not self.active:
+            self.timer.start()
+            self.active = True
+            self.control_buttons.start_button.configure(text="Stop (T)", fg_color=RED, hover_color=RED_HIGHLIGHT, text_color=RED_TEXT)
+            self.animate()
     
     def pause(self):
         self.timer.pause()
         self.active = False
-
+        self.control_buttons.start_button.configure(text="Start (T)", fg_color=GREEN, hover_color=GREEN_HIGHLIGHT, text_color=GREEN_TEXT)
         self.create_lap("Pause")
     
     def resume(self):
-        self.timer.resume()
-        self.active = True
-        self.animate()
+        if not self.active:
+            self.timer.resume()
+            self.active = True
+            self.control_buttons.start_button.configure(text="Stop (T)", fg_color=RED, hover_color=RED_HIGHLIGHT, text_color=RED_TEXT)
+            self.animate()
     
     def reset(self):
         self.timer.reset()
         self.clock.draw(0)
+        self.control_buttons.start_button.configure(text="Start (T)", fg_color=GREEN, hover_color=GREEN_HIGHLIGHT, text_color=GREEN_TEXT)
 
         # reset the laps
         self.lap_data.clear()
@@ -73,6 +81,32 @@ class App(ctk.CTk):
         index = str(lap_num) if lap_type == "Lap" else ""
         self.lap_data.append((lap_type,index,self.timer.get_time()))
         self.lap_container.create(self.lap_data)
+
+    def start_handler(self, event=None):
+        if self.active:
+            self.pause()
+            self.control_buttons.start_button.configure(text="Stop (T)", fg_color=RED, hover_color=RED_HIGHLIGHT, text_color=RED_TEXT)
+            self.control_buttons.lap_button.configure(text="Reset")
+            self.save_to_excel()
+        else:
+            if self.timer.paused:
+                self.resume()
+            else:
+                self.start()
+
+        if self.active:
+            self.save_to_excel()
+
+    def save_to_excel(self):
+        wb = Workbook()
+        ws = wb.active
+        ws.append(["Lap Type", "Time (ms)"])
+
+        for lap in self.lap_data:
+            ws.append((lap[0], lap[1], convert_ms_to_time_string(lap[2])))
+
+        wb.save("match_data.xlsx")
+
 
 class Clock(tk.Canvas):
     def __init__(self,parent):
@@ -191,7 +225,7 @@ class ControlButtons(ctk.CTkFrame):
         # start button
         self.start_button = ctk.CTkButton(
             master=self,
-            text="Start",
+            text="Start (T)",
             command=self.start_handler,
             fg_color=GREEN,
             hover_color=GREEN_HIGHLIGHT,
